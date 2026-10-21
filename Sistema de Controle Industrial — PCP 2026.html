@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Controle Industrial — PCP 2026</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <style>
+    :root {
+      --accent: #f59e0b;
+      --accent-text: #fbbf24;
+      --accent-contrast: #111417;
+      --bg: #111417;
+      --surface: #1a1e23;
+      --surface-hover: #22272e;
+      --border: #2a313a;
+      --border-accent: rgba(245, 158, 11, 0.4);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-system);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+    }
+
+    .main-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2.5rem 1.25rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Top badge / status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--accent-text);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      display: inline-block;
+    }
+
+    /* Header styling */
+    .hub-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .hub-header h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem 0;
+      color: #ffffff;
+    }
+
+    .hub-header p {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-muted);
+      margin: 0;
+      font-weight: 400;
+    }
+
+    /* Navigation cards grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+      }
+    }
+
+    /* Card styling */
+    .hub-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      outline: none;
+    }
+
+    .hub-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 0.22s ease;
+    }
+
+    .hub-card:hover,
+    .hub-card:focus-visible {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      background: var(--surface-hover);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border-accent);
+    }
+
+    .hub-card:hover::before,
+    .hub-card:focus-visible::before {
+      background: var(--accent);
+    }
+
+    .hub-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--accent-text);
+      transition: transform 0.22s ease, background 0.22s ease;
+    }
+
+    .hub-card:hover .card-icon-wrap {
+      transform: scale(1.08);
+      background: rgba(245, 158, 11, 0.2);
+    }
+
+    .card-icon-wrap svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .card-heading {
+      flex: 1;
+    }
+
+    .card-tag {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-text);
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    .card-heading h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      margin: 0 0 2rem 0;
+      flex-grow: 1;
+    }
+
+    .card-meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .meta-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #d1d5db;
+    }
+
+    /* Action button inside card */
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border: none;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.18s ease;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
+
+    .hub-card:hover .btn-action {
+      background: #fbbf24;
+    }
+
+    .btn-action svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.18s ease;
+      fill: currentColor;
+    }
+
+    .hub-card:hover .btn-action svg {
+      transform: translateX(3px);
+    }
+
+    /* System Quick Telemetry / Industrial Bar */
+    .telemetry-strip {
+      background: rgba(26, 30, 35, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+
+    .telemetry-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .telemetry-item strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Footer styling */
+    .hub-footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: rgba(17, 20, 23, 0.95);
+    }
+
+    .hub-footer span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .lock-icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      vertical-align: middle;
+      fill: var(--accent-text);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="main-wrap">
+    
+    <!-- Top Identity / Status -->
+    <header class="hub-header">
+      <div class="status-pill">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Unidade Fabril • Conexão Operacional</span>
+      </div>
+      <h1>Sistema de Controle Industrial</h1>
+      <p>PCP 2026 • Dashboard de Produção &amp; Apontamento CNC</p>
+    </header>
+
+    <!-- Operational Telemetry Bar -->
+    <section class="telemetry-strip" aria-label="Informações do Sistema">
+      <div class="telemetry-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#9ca3af" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+        </svg>
+        <span>Turno: <strong>Turno Ativo (07h às 17h)</strong></span>
+      </div>
+      <div class="telemetry-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#9ca3af" aria-hidden="true">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+        <span>Ordens Monitoradas: <strong>60 OPs Cadastradas</strong></span>
+      </div>
+      <div class="telemetry-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#9ca3af" aria-hidden="true">
+          <path d="M22 5.72l-4.6-3.86-1.29 1.53 4.6 3.86L22 5.72zM7.88 3.39L6.6 1.86 2 5.71l1.29 1.53 4.59-3.85zM12.5 8H11v6l4.75 2.85.75-1.23-4-2.37V8zM12 4c-4.97 0-9 4.03-9 9 0 4.17 2.84 7.67 6.69 8.69L12 22l2.31-.31C18.16 20.67 21 17.17 21 13c0-4.97-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+        </svg>
+        <span>Maquinário: <strong>Routers BRAVUS &amp; VITOR CIOLA</strong></span>
+      </div>
+    </section>
+
+    <!-- Navigation Hub Cards -->
+    <div class="cards-grid">
+      
+      <!-- Card 1: Dashboard de Produção 2026 -->
+      <a href="Dashboard_de_Producao_2026_Dados_Reais.html" class="hub-card" aria-label="Abrir Dashboard de Produção 2026 - PCP Planejamento e Ordens">
+        <div>
+          <div class="card-top">
+            <div class="card-icon-wrap" aria-hidden="true">
+              <!-- Bar chart / telemetry SVG icon -->
+              <svg viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+              </svg>
+            </div>
+            <div class="card-heading">
+              <span class="card-tag">Módulo Analítico</span>
+              <h2>Dashboard de Produção 2026</h2>
+            </div>
+          </div>
+          
+          <p class="card-desc">
+            PCP • Planejamento, cronograma, 60 ordens monitoradas, gráficos e valores.
+          </p>
+
+          <div class="card-meta-tags" aria-hidden="true">
+            <span class="meta-chip">Gantt &amp; Cronograma</span>
+            <span class="meta-chip">Faturamento &amp; Custos</span>
+            <span class="meta-chip">Status em Tempo Real</span>
+          </div>
+        </div>
+
+        <div class="btn-action">
+          <span>Abrir Dashboard</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.16l-5.58 5.59L12 20l8-8z"/>
+          </svg>
+        </div>
+      </a>
+
+      <!-- Card 2: Apontamento CNC -->
+      <a href="Apontamento_CNC_Controle_de_Tempo_2_.html" class="hub-card" aria-label="Abrir Apontamento CNC - Controle de Tempo de Produção">
+        <div>
+          <div class="card-top">
+            <div class="card-icon-wrap" aria-hidden="true">
+              <!-- Stopwatch / timer CNC SVG icon -->
+              <svg viewBox="0 0 24 24">
+                <path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+              </svg>
+            </div>
+            <div class="card-heading">
+              <span class="card-tag">Módulo Operacional</span>
+              <h2>Apontamento CNC</h2>
+            </div>
+          </div>
+          
+          <p class="card-desc">
+            Controle de tempo de produção • Routers BRAVUS e VITOR CIOLA • Cronômetro e indicadores.
+          </p>
+
+          <div class="card-meta-tags" aria-hidden="true">
+            <span class="meta-chip">Router BRAVUS</span>
+            <span class="meta-chip">Router VITOR CIOLA</span>
+            <span class="meta-chip">Métricas de Parada &amp; Corte</span>
+          </div>
+        </div>
+
+        <div class="btn-action">
+          <span>Abrir Apontamento</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.16l-5.58 5.59L12 20l8-8z"/>
+          </svg>
+        </div>
+      </a>
+
+    </div>
+
+  </main>
+
+  <!-- Discreet Industrial Footer -->
+  <footer class="hub-footer">
+    <span>
+      <svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+      </svg>
+      Sistema Interno • Uso restrito da fábrica
+    </span>
+  </footer>
+
+  <script>
+    // Keep keyboard accessibility smooth and track interaction
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = document.querySelectorAll('.hub-card');
+      cards.forEach(card => {
+        card.addEventListener('keydown', (e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            card.click();
+          }
+        });
+      });
+    });
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>

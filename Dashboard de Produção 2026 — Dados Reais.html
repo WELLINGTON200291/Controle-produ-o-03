@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Produção 2026 — Dados Reais</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <style>
+    :root {
+      --accent: #1565c0;
+      --navy: #0b3d66;
+      --blue-subtle: #e3f2fd;
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --text: #1a2332;
+      --text-muted: #5f6b7a;
+      --border: #d0d7de;
+      --st-finalizado: #2e7d32;
+      --st-produzindo: #1565c0;
+      --st-parado: #c62828;
+      --st-projetos: #0288d1;
+      --st-arte: #f57f17;
+      --st-aprovacao: #f9a825;
+      --st-retira: #7e57c2;
+      --st-reprovado: #880e4f;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-bar {
+      background: linear-gradient(135deg, #0b3d66 0%, #1565c0 100%);
+      color: #ffffff;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 4px 12px rgba(11, 61, 102, 0.15);
+    }
+    .header-title-h1 {
+      color: #ffffff !important;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .header-subtitle-p {
+      color: #e3f2fd !important;
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+    }
+    .header-btn {
+      background: #ffffff;
+      color: #0b3d66;
+      font-weight: 600;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.15s, transform 0.15s;
+    }
+    .header-btn:hover {
+      background: #f0f4f8;
+      transform: translateY(-1px);
+    }
+
+    .app-container {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem 1rem;
+    }
+
+    /* Info Alert */
+    .banner-alert {
+      background: #e8f0fe;
+      border-left: 4px solid var(--accent);
+      color: #0b3d66;
+      padding: 0.65rem 1rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* PDF Attachment Card */
+    .card-pdf-anexo {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* KPI Grid */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      border-top: 4px solid var(--accent);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-card.kpi-success { border-top-color: #2e7d32; }
+    .kpi-card.kpi-danger  { border-top-color: #c62828; }
+    .kpi-card.kpi-amber   { border-top-color: #f57f17; }
+    .kpi-card.kpi-purple  { border-top-color: #7e57c2; }
+    .kpi-num {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Filter Row */
+    .filter-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+    .filter-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .chart-panel {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chart-svg-container {
+      flex: 1;
+      width: 100%;
+      min-height: 210px;
+      position: relative;
+    }
+
+    /* Accordion / New Order */
+    .collapsible-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .collapsible-header {
+      padding: 0.85rem 1.25rem;
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--navy);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+    }
+    .collapsible-header:hover {
+      background: #f1f5f9;
+    }
+    .collapsible-header.open {
+      border-bottom: 1px solid var(--border);
+    }
+    .collapsible-content {
+      padding: 1.25rem;
+      display: none;
+    }
+    .collapsible-content.open {
+      display: block;
+    }
+
+    /* Column Selector */
+    .column-selector {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px 8px 0 0;
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+      border-bottom: none;
+    }
+    .column-selector label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      user-select: none;
+      color: var(--text);
+    }
+
+    /* Table Container */
+    .table-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      overflow-x: auto;
+      margin-bottom: 1.25rem;
+    }
+    table.prod-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      min-width: 1200px;
+    }
+    table.prod-table th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 0.65rem;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+    }
+    table.prod-table th.th-num {
+      text-align: right;
+    }
+    table.prod-table td {
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid #eef2f6;
+      vertical-align: middle;
+    }
+    table.prod-table tr:hover {
+      background: #f8fafc;
+    }
+
+    /* Status badges & pills */
+    .badge-status {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-status.st-FINALIZADO          { background: var(--st-finalizado); }
+    .badge-status.st-PRODUZINDO          { background: var(--st-produzindo); }
+    .badge-status.st-PARADO              { background: var(--st-parado); }
+    .badge-status.st-D_PROJETOS          { background: var(--st-projetos); }
+    .badge-status.st-AG_ARTE             { background: var(--st-arte); }
+    .badge-status.st-AG_APROVACAO        { background: var(--st-aprovacao); color: #212121; }
+    .badge-status.st-AGUARDANDO_RETIRA   { background: var(--st-retira); }
+    .badge-status.st-PROTOTIPO_REPROVADO { background: var(--st-reprovado); }
+
+    .badge-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid #fecaca;
+      margin-left: 0.35rem;
+    }
+    .badge-pdf:hover {
+      background: #fecaca;
+    }
+
+    /* Progress bar */
+    .prog-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 140px;
+    }
+    .prog-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .prog-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1565c0, #2e7d32);
+      transition: width 0.2s ease;
+    }
+    .prog-input {
+      width: 50px;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.25rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      text-align: right;
+    }
+
+    /* Inline selects */
+    .inline-select {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: var(--text);
+      max-width: 145px;
+    }
+
+    /* Thumbnails */
+    .thumb-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      object-fit: cover;
+      cursor: pointer;
+      display: block;
+    }
+    .thumb-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .thumb-del {
+      border: none;
+      background: #ef4444;
+      color: #ffffff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 11px;
+      line-height: 18px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 10px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1rem 1.25rem;
+      background: #0b3d66;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: #ffffff;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .modal-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      background: #f8fafc;
+    }
+
+    /* Lightbox */
+    .lightbox-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .lightbox-backdrop.open {
+      display: flex;
+    }
+    .lightbox-img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      background: #ffffff;
+    }
+
+    /* Footer */
+    .app-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 1rem;
+      margin-top: 2rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Print styling */
+    #areaImpressao {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #areaImpressao, #areaImpressao * {
+        visibility: visible !important;
+      }
+      #areaImpressao {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      }
+      table.print-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 9pt !important;
+        margin-top: 10px !important;
+      }
+      table.print-table th, table.print-table td {
+        border: 1px solid #444 !important;
+        padding: 4px 6px !important;
+        text-align: left !important;
+      }
+      table.print-table th {
+        background: #e2e8f0 !important;
+        font-weight: 700 !important;
+      }
+      .print-header {
+        border-bottom: 2px solid #0b3d66;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+      }
+      .print-footer {
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px solid #666;
+        font-size: 9pt;
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="header-bar">
+    <div style="max-width: 1560px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+      <div>
+        <h1 class="header-title-h1">Dashboard de Produção 2026 — Dados Reais</h1>
+        <p class="header-subtitle-p" id="txtDataHoje">Hoje: 06/03/2026 | Gestão Integrada de Fábrica &amp; Cronograma</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button class="header-btn" onclick="executarImpressaoProgramacao()" title="Imprimir versão limpa da programação">
+          🖨️ Imprimir Programação
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-container">
+
+    <!-- Information banner -->
+    <div class="banner-alert">
+      <span>ℹ️ <strong>Base Original:</strong> 8 itens sem data de entrega e 8 sem valor de pedido na base original.</span>
+      <button class="btn btn-sm" style="font-size: 0.75rem; background: #ffffff; border: 1px solid #cbd5e1; cursor: pointer; color: #0b3d66;" onclick="restaurarDadosOriginais()">
+        ↺ Restaurar dados originais
+      </button>
+    </div>
+
+    <!-- Section: Anexar PDF no topo -->
+    <div class="card-pdf-anexo">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.3rem;">📄</span>
+        <strong>Ordem de Produção (PDF):</strong>
+      </div>
+      <div style="flex: 1; min-width: 250px;">
+        <select id="selOrdemTopPdf" class="input" style="width: 100%; font-size: 0.85rem;">
+          <option value="">Selecione uma Ordem de Produção...</option>
+        </select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="file" id="fileTopPdf" accept=".pdf" style="font-size: 0.82rem;">
+        <button class="btn btn-primary btn-sm" onclick="anexarPdfTopo()">Anexar PDF</button>
+      </div>
+      <span id="topPdfMsg" style="font-size: 0.8rem; color: #2e7d32; font-weight: 600;"></span>
+    </div>
+
+    <!-- 6 KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="filter-label">Total de Itens</div>
+        <div class="kpi-num" id="kpiTotalItens">60</div>
+        <div class="kpi-sub">Ordens monitoradas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="filter-label">Valor Total</div>
+        <div class="kpi-num" id="kpiValorTotal">R$ 780.000</div>
+        <div class="kpi-sub" id="kpiValorSub">52 itens com valor</div>
+      </div>
+      <div class="kpi-card kpi-amber">
+        <div class="filter-label">Itens Ativos</div>
+        <div class="kpi-num" id="kpiItensAtivos">26</div>
+        <div class="kpi-sub">Em andamento / parada / aprovação</div>
+      </div>
+      <div class="kpi-card kpi-success">
+        <div class="filter-label">Finalizados</div>
+        <div class="kpi-num" id="kpiFinalizados">32</div>
+        <div class="kpi-sub" id="kpiFinalizadosPct">53,3% do cronograma</div>
+      </div>
+      <div class="kpi-card kpi-danger">
+        <div class="filter-label">Protótipos Reprovados</div>
+        <div class="kpi-num" id="kpiProtReprovados">2</div>
+        <div class="kpi-sub" id="kpiProtReprovadosVal">R$ 30.000 (reavaliação)</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="filter-label">Tempo Médio de Término</div>
+        <div class="kpi-num" id="kpiTempoMedio">10 dias</div>
+        <div class="kpi-sub">Baseado em início e término</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+      <div class="filter-grid">
+        <div>
+          <label class="filter-label" for="filtroBusca">Busca por texto</label>
+          <input type="text" id="filtroBusca" class="input" placeholder="Nº OP ou descrição..." oninput="aplicarFiltros()">
+        </div>
+        <div>
+          <label class="filter-label" for="filtroStatus">Status</label>
+          <select id="filtroStatus" class="input" onchange="aplicarFiltros()">
+            <option value="TODOS">Todos os Status</option>
+            <option value="FINALIZADO">FINALIZADO</option>
+            <option value="PRODUZINDO">PRODUZINDO</option>
+            <option value="PARADO">PARADO</option>
+            <option value="D. PROJETOS">D. PROJETOS</option>
+            <option value="AG. ARTE">AG. ARTE</option>
+            <option value="AG. APROVAÇÃO">AG. APROVAÇÃO</option>
+            <option value="AGUARDANDO RETIRA">AGUARDANDO RETIRA</option>
+            <option value="PROTOTIPO REPROVADO">PROTOTIPO REPROVADO</option>
+          </select>
+        </div>
+        <div>
+          <label class="filter-label" for="filtroSetor">Setor</label>
+          <select id="filtroSetor" class="input" onchange="aplicarFiltros()">
+            <option value="TODOS">Todos os Setores</option>
+            <option value="MARCENARIA">MARCENARIA</option>
+            <option value="METALURGICA">METALURGICA</option>
+            <option value="PINTURA">PINTURA</option>
+            <option value="PROTOTIPO">PROTOTIPO</option>
+          </select>
+        </div>
+        <div>
+          <label class="filter-label" for="filtroPeriodo">Período de Entrega</label>
+          <select id="filtroPeriodo" class="input" onchange="aplicarFiltros()">
+            <option value="TODOS">Todo o período</option>
+            <option value="2025-10">out/2025</option>
+            <option value="2025-11">nov/2025</option>
+            <option value="2025-12">dez/2025</option>
+            <option value="SEM_DATA">Sem data</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-secondary" style="width: 100%;" onclick="limparFiltros()">Limpar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+      <!-- Chart A: Status -->
+      <div class="chart-panel">
+        <div class="chart-panel-title">
+          <span>Itens por Status</span>
+          <small class="text-muted" id="cntChartStatus">60 itens</small>
+        </div>
+        <div class="chart-svg-container" id="chartBoxStatus"></div>
+      </div>
+
+      <!-- Chart B: Setor -->
+      <div class="chart-panel">
+        <div class="chart-panel-title">
+          <span>Itens por Setor</span>
+          <small class="text-muted" id="cntChartSetor">60 itens</small>
+        </div>
+        <div class="chart-svg-container" id="chartBoxSetor"></div>
+      </div>
+
+      <!-- Chart C: Entregas por Mês -->
+      <div class="chart-panel">
+        <div class="chart-panel-title">
+          <span>Entregas por Mês</span>
+          <small class="text-muted" id="cntChartMes">Previsto</small>
+        </div>
+        <div class="chart-svg-container" id="chartBoxMes"></div>
+      </div>
+
+      <!-- Chart D: Valor por Status -->
+      <div class="chart-panel">
+        <div class="chart-panel-title">
+          <span>Valor por Status (R$)</span>
+          <small class="text-muted" id="cntChartValor">Total filtrado</small>
+        </div>
+        <div class="chart-svg-container" id="chartBoxValor"></div>
+      </div>
+    </div>
+
+    <!-- Collapsible: Nova Ordem de Produção -->
+    <div class="collapsible-card">
+      <div class="collapsible-header" id="headerFormNovo" onclick="toggleFormNovo()">
+        <span>➕ Nova Ordem de Produção (Cadastrar Registro)</span>
+        <span id="iconeFormNovo">▼</span>
+      </div>
+      <div class="collapsible-content" id="contentFormNovo">
+        <form id="formNovaOrdem" onsubmit="salvarNovaOrdem(event)">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.85rem;">
+            <div>
+              <label class="filter-label">Nº da Ordem</label>
+              <input type="text" id="novoOp" class="input" placeholder="Ex: OP-0061 (auto se vazio)">
+            </div>
+            <div style="grid-column: span 2;">
+              <label class="filter-label">Descrição do Produto *</label>
+              <input type="text" id="novoDesc" class="input" placeholder="Cliente &quot;Descrição do item..." required>
+            </div>
+            <div>
+              <label class="filter-label">Quantidade *</label>
+              <input type="number" id="novoQtd" class="input" min="1" value="1" required>
+            </div>
+            <div>
+              <label class="filter-label">Setor *</label>
+              <select id="novoSetor" class="input" required>
+                <option value="MARCENARIA">MARCENARIA</option>
+                <option value="METALURGICA">METALURGICA</option>
+                <option value="PINTURA">PINTURA</option>
+                <option value="PROTOTIPO">PROTOTIPO</option>
+              </select>
+            </div>
+            <div>
+              <label class="filter-label">Data de Início</label>
+              <input type="date" id="novoInicio" class="input">
+            </div>
+            <div>
+              <label class="filter-label">Data de Entrega</label>
+              <input type="date" id="novoFim" class="input">
+            </div>
+            <div>
+              <label class="filter-label">Status *</label>
+              <select id="novoStatus" class="input" required>
+                <option value="PRODUZINDO">PRODUZINDO</option>
+                <option value="FINALIZADO">FINALIZADO</option>
+                <option value="PARADO">PARADO</option>
+                <option value="D. PROJETOS">D. PROJETOS</option>
+                <option value="AG. ARTE">AG. ARTE</option>
+                <option value="AG. APROVAÇÃO">AG. APROVAÇÃO</option>
+                <option value="AGUARDANDO RETIRA">AGUARDANDO RETIRA</option>
+                <option value="PROTOTIPO REPROVADO">PROTOTIPO REPROVADO</option>
+              </select>
+            </div>
+            <div>
+              <label class="filter-label">Valor (R$)</label>
+              <input type="number" id="novoValor" class="input" min="0" step="0.01" placeholder="Ex: 15000">
+            </div>
+          </div>
+          <div style="margin-top: 1rem; text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="toggleFormNovo()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Cadastrar Ordem</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Column selector -->
+    <div class="column-selector">
+      <strong style="font-size: 0.78rem; color: #475569;">Colunas Visíveis:</strong>
+      <label><input type="checkbox" data-col="col-op" onchange="toggleColuna(this)"> Ordem</label>
+      <label><input type="checkbox" data-col="col-desc" onchange="toggleColuna(this)"> Descrição</label>
+      <label><input type="checkbox" data-col="col-img" onchange="toggleColuna(this)"> Imagem</label>
+      <label><input type="checkbox" data-col="col-qtd" onchange="toggleColuna(this)"> Qtd</label>
+      <label><input type="checkbox" data-col="col-setor" onchange="toggleColuna(this)"> Setor</label>
+      <label><input type="checkbox" data-col="col-ini" onchange="toggleColuna(this)"> Início</label>
+      <label><input type="checkbox" data-col="col-fim" onchange="toggleColuna(this)"> Entrega</label>
+      <label><input type="checkbox" data-col="col-tempo" onchange="toggleColuna(this)"> Tempo</label>
+      <label><input type="checkbox" data-col="col-valor" onchange="toggleColuna(this)"> Valor</label>
+      <label><input type="checkbox" data-col="col-prog" onchange="toggleColuna(this)"> Progresso</label>
+      <label><input type="checkbox" data-col="col-status" onchange="toggleColuna(this)"> Status</label>
+      <label><input type="checkbox" data-col="col-acoes" onchange="toggleColuna(this)"> Ações</label>
+      <button class="btn btn-sm btn-secondary" style="margin-left: auto; font-size: 0.72rem; padding: 0.15rem 0.5rem;" onclick="mostrarTodasColunas()">Todas</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table class="prod-table" id="tabelaProducao">
+        <thead>
+          <tr>
+            <th class="col-op">Ordem</th>
+            <th class="col-desc">Descrição do Produto</th>
+            <th class="col-img">Imagem</th>
+            <th class="col-qtd th-num">Qtd</th>
+            <th class="col-setor">Setor</th>
+            <th class="col-ini">Início</th>
+            <th class="col-fim">Entrega</th>
+            <th class="col-tempo th-num">Tempo (dias)</th>
+            <th class="col-valor th-num">Valor</th>
+            <th class="col-prog">Progresso (Produzido)</th>
+            <th class="col-status">Status</th>
+            <th class="col-acoes">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyProducao">
+          <!-- Rendered via JS -->
+        </tbody>
+      </table>
+      <div style="padding: 0.75rem 1rem; background: #f8fafc; border-top: 1px solid var(--border); font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+        <span id="contadorItens">Exibindo 60 de 60 ordens</span>
+        <span class="text-muted">Ordenado por data de entrega (sem data no final)</span>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <div style="max-width: 1560px; margin: 0 auto; width: 100%; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem;">
+      <span>Fonte: Dashboard_Producao_2026.xlsx — 60 itens | Período: 20/10/2025 a 04/12/2025</span>
+      <span>Sistema Interno de Controle Industrial • PCP 2026</span>
+    </div>
+  </footer>
+
+  <!-- Modal Editar Ordem -->
+  <div class="modal-backdrop" id="modalEdicao">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Editar Ordem de Produção</h3>
+        <button class="modal-close" onclick="fecharModalEdicao()">&times;</button>
+      </div>
+      <form id="formEditarOrdem" onsubmit="salvarEdicaoOrdem(event)">
+        <div class="modal-body">
+          <input type="hidden" id="editId">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.85rem;">
+            <div>
+              <label class="filter-label">Nº da Ordem</label>
+              <input type="text" id="editOp" class="input">
+            </div>
+            <div style="grid-column: span 2;">
+              <label class="filter-label">Descrição do Produto *</label>
+              <input type="text" id="editDesc" class="input" required>
+            </div>
+            <div>
+              <label class="filter-label">Quantidade *</label>
+              <input type="number" id="editQtd" class="input" min="1" required>
+            </div>
+            <div>
+              <label class="filter-label">Quantidade Produzida</label>
+              <input type="number" id="editProduzido" class="input" min="0">
+            </div>
+            <div>
+              <label class="filter-label">Setor *</label>
+              <select id="editSetor" class="input" required>
+                <option value="MARCENARIA">MARCENARIA</option>
+                <option value="METALURGICA">METALURGICA</option>
+                <option value="PINTURA">PINTURA</option>
+                <option value="PROTOTIPO">PROTOTIPO</option>
+              </select>
+            </div>
+            <div>
+              <label class="filter-label">Data de Início</label>
+              <input type="date" id="editInicio" class="input">
+            </div>
+            <div>
+              <label class="filter-label">Data de Entrega</label>
+              <input type="date" id="editFim" class="input">
+            </div>
+            <div>
+              <label class="filter-label">Status *</label>
+              <select id="editStatus" class="input" required>
+                <option value="FINALIZADO">FINALIZADO</option>
+                <option value="PRODUZINDO">PRODUZINDO</option>
+                <option value="PARADO">PARADO</option>
+                <option value="D. PROJETOS">D. PROJETOS</option>
+                <option value="AG. ARTE">AG. ARTE</option>
+                <option value="AG. APROVAÇÃO">AG. APROVAÇÃO</option>
+                <option value="AGUARDANDO RETIRA">AGUARDANDO RETIRA</option>
+                <option value="PROTOTIPO REPROVADO">PROTOTIPO REPROVADO</option>
+              </select>
+            </div>
+            <div>
+              <label class="filter-label">Valor do Pedido (R$)</label>
+              <input type="number" id="editValor" class="input" min="0" step="0.01">
+            </div>
+            <div style="grid-column: span 2; border-top: 1px solid #e2e8f0; padding-top: 0.75rem; margin-top: 0.5rem;">
+              <label class="filter-label">Ordem de Produção (PDF)</label>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="editPdfFile" accept=".pdf" style="font-size: 0.8rem;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="anexarPdfModal()">Substituir / Adicionar PDF</button>
+                <button type="button" class="btn btn-sm btn-danger" id="btnRemoverPdfModal" onclick="removerPdfModal()" style="display:none; background:#fee2e2; color:#991b1b; border:1px solid #fecaca;">Remover PDF</button>
+                <a href="#" id="linkVerPdfModal" target="_blank" class="badge-pdf" style="display:none;">Abrir PDF atual</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden file input for inline thumbnail upload -->
+  <input type="file" id="inlineImgInput" accept="image/*" style="display:none;" onchange="processarUploadImagemInline(event)">
+
+  <!-- Lightbox Overlay -->
+  <div class="lightbox-backdrop" id="lightboxModal" onclick="fecharLightbox(event)">
+    <img src="" id="lightboxImg" class="lightbox-img" alt="Visualização ampliada">
+  </div>
+
+  <!-- Área de Impressão Semanal Exclusiva para window.print() -->
+  <div id="areaImpressao"></div>
+
+  <script>
+    /* DADOS REAIS EMBUTIDOS - 60 ITENS */
+    const DADOS_BASE_ORIGINAIS = [
+      { id: 1,  op: "COM045808", desc: "Duracell \"Totem", qtd: 1, setor: "PROTOTIPO", inicio: "2025-10-20", fim: "2025-10-30", status: "PROTOTIPO REPROVADO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 2,  op: "SOPCV2868", desc: "Dexco \"Letras", qtd: 1, setor: "PINTURA", inicio: "2025-10-21", fim: "2025-10-31", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 3,  op: "—", desc: "Centauro \"Base P", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 4,  op: "—", desc: "Centauro \"Base M", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "AGUARDANDO RETIRA", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 5,  op: "—", desc: "Centauro \"Base", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "PARADO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 6,  op: "COM045472", desc: "Loccitane \"Item Toalha 60 Display", qtd: 2, setor: "MARCENARIA", inicio: "2025-10-25", fim: "2025-11-04", status: "D. PROJETOS", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 7,  op: "COM045840", desc: "Vimer \"Painel Dexco", qtd: 1, setor: "PROTOTIPO", inicio: "2025-10-25", fim: "2025-11-04", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 8,  op: "SOPCV2791", desc: "Lindt Natal \"Vitrine GG", qtd: 6, setor: "MARCENARIA", inicio: "2025-10-31", fim: "2025-11-10", status: "FINALIZADO", valor: 15000, produzido: 6, pdf: null, img: null },
+      { id: 9,  op: "COM045798", desc: "Albert Einstein \"Bastões", qtd: 46, setor: "MARCENARIA", inicio: "2025-11-03", fim: "2025-11-13", status: "D. PROJETOS", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 10, op: "DSP000221", desc: "Magnum \"Display 24cm", qtd: 11, setor: "MARCENARIA", inicio: "2025-11-03", fim: "2025-11-13", status: "PARADO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 11, op: "COM045949", desc: "Green V \"Totem", qtd: 2, setor: "MARCENARIA", inicio: "2025-11-16", fim: "2025-11-26", status: "FINALIZADO", valor: 15000, produzido: 2, pdf: null, img: null },
+      { id: 12, op: "DSP000318", desc: "Centauro \"Cubos G", qtd: 21, setor: "METALURGICA", inicio: "2025-11-18", fim: "2025-11-28", status: "AG. ARTE", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 13, op: "COM045970", desc: "Uai Brasil \"Expositor Esquer", qtd: 1, setor: "MARCENARIA", inicio: "2025-11-23", fim: "2025-12-03", status: "AG. ARTE", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 14, op: "COM046066", desc: "Centauro \"Letras125x21cm", qtd: 19, setor: "PINTURA", inicio: "2025-11-18", fim: "2025-11-28", status: "AG. APROVAÇÃO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 15, op: "COM046066", desc: "Centauro \"Letras 90x15,5cm", qtd: 2, setor: "PINTURA", inicio: "2025-11-18", fim: "2025-11-28", status: "AG. APROVAÇÃO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 16, op: "DSP000318", desc: "Centauro \"Cubos P", qtd: 21, setor: "METALURGICA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 21, pdf: null, img: null },
+      { id: 17, op: "COM046066", desc: "Squid \"Letras Caixa", qtd: 1, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 18, op: "COM045970", desc: "Uai Brasil \"Expositor Direita", qtd: 1, setor: "MARCENARIA", inicio: "2025-11-23", fim: "2025-12-03", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 19, op: "DSP000323", desc: "Centauro \"Ilha Premium PP", qtd: 1, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 20, op: "COM045970", desc: "Uai Brasil \"Nichos", qtd: 2, setor: "MARCENARIA", inicio: "2025-11-23", fim: "2025-12-03", status: "FINALIZADO", valor: 15000, produzido: 2, pdf: null, img: null },
+      { id: 21, op: "COM046066", desc: "Loccitane Provence \"Item 10 Base promocional", qtd: 10, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 10, pdf: null, img: null },
+      { id: 22, op: "DSP000296", desc: "Inova \"Pórtico", qtd: 400, setor: "METALURGICA", inicio: "2025-11-07", fim: "2025-11-17", status: "FINALIZADO", valor: 15000, produzido: 400, pdf: null, img: null },
+      { id: 23, op: "SOPCV2868", desc: "Dexco \"Bases Preto", qtd: 4, setor: "MARCENARIA", inicio: "2025-11-07", fim: "2025-11-17", status: "FINALIZADO", valor: 15000, produzido: 4, pdf: null, img: null },
+      { id: 24, op: "SOPCV2868", desc: "Dexco \"Base Verde", qtd: 4, setor: "MARCENARIA", inicio: "2025-11-07", fim: "2025-11-17", status: "FINALIZADO", valor: 15000, produzido: 4, pdf: null, img: null },
+      { id: 25, op: "SOPCV2868", desc: "Dexco \"Logo", qtd: 4, setor: "METALURGICA", inicio: "2025-11-07", fim: "2025-11-17", status: "PARADO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 26, op: "COM046066", desc: "Loccitane Provence \"Item 11 Topo Suporte", qtd: 24, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "D. PROJETOS", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 27, op: "COM046012", desc: "Tenda \"Totem", qtd: 1, setor: "METALURGICA", inicio: "2025-11-15", fim: "2025-11-25", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 28, op: "SOPCV2773", desc: "Havaianas Caixote MDF 2 faces", qtd: 12, setor: "MARCENARIA", inicio: "2025-10-25", fim: "2025-11-04", status: "FINALIZADO", valor: 15000, produzido: 12, pdf: null, img: null },
+      { id: 29, op: "COM045837", desc: "Dengo Natal \"Item 03 Letra Caixa", qtd: 2, setor: "MARCENARIA", inicio: "2025-10-27", fim: "2025-11-06", status: "AGUARDANDO RETIRA", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 30, op: "DSP000290", desc: "Tekbond \"Display", qtd: 10, setor: "METALURGICA", inicio: "2025-10-25", fim: "2025-11-04", status: "FINALIZADO", valor: 15000, produzido: 10, pdf: null, img: null },
+      { id: 31, op: "COM045850", desc: "Lacoste \"Croco Autoportante", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-25", fim: "2025-11-04", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 32, op: "DSP000308", desc: "Lacoste \"Painel Armário", qtd: 1, setor: "METALURGICA", inicio: "2025-10-25", fim: "2025-11-04", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 33, op: "COM046066", desc: "Loccitane Provence \"Creme de Mãos", qtd: 24, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 24, pdf: null, img: null },
+      { id: 34, op: "COM045746", desc: "Prateleira \"Gabriel", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-24", fim: "2025-11-03", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 35, op: "COM046066", desc: "Loccitane \"Apoio Creme de Mãos", qtd: 8, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 8, pdf: null, img: null },
+      { id: 36, op: "COM045619", desc: "Felap \"Painel Perfurado", qtd: 1, setor: "PROTOTIPO", inicio: "2025-11-03", fim: "2025-11-13", status: "PROTOTIPO REPROVADO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 37, op: "SOPCV2874", desc: "Centauro \"Totem G", qtd: 1, setor: "METALURGICA", inicio: "2025-10-24", fim: "2025-11-03", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 38, op: "SOPCV2874", desc: "Centauro \"Estrutura", qtd: 1, setor: "METALURGICA", inicio: "2025-10-24", fim: "2025-11-03", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 39, op: "—", desc: "Tellerina Life \"Base G", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 40, op: "COM045837", desc: "Dengo Natal \"Item 04 Bolas Natalinas", qtd: 5, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 5, pdf: null, img: null },
+      { id: 41, op: "—", desc: "Tellerina Life \"Base M", qtd: 1, setor: "PROTOTIPO", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 1, pdf: null, img: null },
+      { id: 42, op: "COM046066", desc: "Loccitane Provence \"Item 12 Bandeja", qtd: 6, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "FINALIZADO", valor: 15000, produzido: 6, pdf: null, img: null },
+      { id: 43, op: "COM045837", desc: "Dengo Natal \"Item 51 Bandeja P", qtd: 2, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 2, pdf: null, img: null },
+      { id: 44, op: "COM045837", desc: "Dengo Natal \"Item 51 Bandeja M", qtd: 4, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 4, pdf: null, img: null },
+      { id: 45, op: "COM045837", desc: "Dengo Natal \"Item 51 Bandeja G", qtd: 3, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "FINALIZADO", valor: 15000, produzido: 3, pdf: null, img: null },
+      { id: 46, op: "COM045861", desc: "Inova \"Pórtico Peq", qtd: 20, setor: "METALURGICA", inicio: "2025-11-03", fim: "2025-11-13", status: "FINALIZADO", valor: 15000, produzido: 20, pdf: null, img: null },
+      { id: 47, op: "COM045837", desc: "Dengo Natal \"Item 25 Suporte Fotos", qtd: 2, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 48, op: "COM045837", desc: "Dengo Natal \"Item 46 Caixote de Bananas", qtd: 2, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 49, op: "COM045837", desc: "Dengo Natal \"Item 47 Caixote Panetones", qtd: 1, setor: "MARCENARIA", inicio: "2025-10-26", fim: "2025-11-05", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 50, op: "COM046066", desc: "Loccitane Provence \"Item 13 Base Cartazete", qtd: 25, setor: "MARCENARIA", inicio: "2025-11-18", fim: "2025-11-28", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 51, op: "DSP000325", desc: "Nestle \"Display", qtd: 1700, setor: "METALURGICA", inicio: "2025-11-18", fim: "2025-11-28", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 52, op: "COM046089", desc: "Havaianas \"Totem", qtd: 13, setor: "MARCENARIA", inicio: "2025-11-24", fim: "2025-12-04", status: "PRODUZINDO", valor: 15000, produzido: 0, pdf: null, img: null },
+      { id: 53, op: "—", desc: "Projeto Júnior", qtd: 1, setor: "MARCENARIA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 54, op: "SOPCV2819", desc: "Pigma Estrutura Fechamento", qtd: 1, setor: "METALURGICA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 55, op: "SOPCV2819", desc: "Pigma Estrutura Cortina", qtd: 1, setor: "METALURGICA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 56, op: "SOPCV2897", desc: "Boticário \"Vitrine 2", qtd: 1, setor: "METALURGICA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 57, op: "SOPCV2897", desc: "Boticário \"Base Maior", qtd: 1, setor: "MARCENARIA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 58, op: "SOPCV2897", desc: "Boticário \"Base Menor", qtd: 1, setor: "MARCENARIA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 59, op: "SOPCV2897", desc: "Boticário \"Vitrine 8", qtd: 1, setor: "METALURGICA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null },
+      { id: 60, op: "COM043607", desc: "Hyundai \"Totem", qtd: 5, setor: "MARCENARIA", inicio: null, fim: null, status: "PRODUZINDO", valor: null, produzido: 0, pdf: null, img: null }
+    ];
+
+    const STORAGE_KEY = "ordensProducao2026";
+    const COLS_KEY = "colunasVisiveisProd2026";
+
+    let ordens = [];
+    let uploadTargetRowId = null;
+
+    const STATUS_CORES = {
+      "FINALIZADO": "#2e7d32",
+      "PRODUZINDO": "#1565c0",
+      "PARADO": "#c62828",
+      "D. PROJETOS": "#0288d1",
+      "AG. ARTE": "#f57f17",
+      "AG. APROVAÇÃO": "#f9a825",
+      "AGUARDANDO RETIRA": "#7e57c2",
+      "PROTOTIPO REPROVADO": "#880e4f"
+    };
+
+    const STATUS_CLASSES = {
+      "FINALIZADO": "st-FINALIZADO",
+      "PRODUZINDO": "st-PRODUZINDO",
+      "PARADO": "st-PARADO",
+      "D. PROJETOS": "st-D_PROJETOS",
+      "AG. ARTE": "st-AG_ARTE",
+      "AG. APROVAÇÃO": "st-AG_APROVACAO",
+      "AGUARDANDO RETIRA": "st-AGUARDANDO_RETIRA",
+      "PROTOTIPO REPROVADO": "st-PROTOTIPO_REPROVADO"
+    };
+
+    /* INICIALIZAÇÃO */
+    document.addEventListener("DOMContentLoaded", () => {
+      carregarOrdens();
+      configurarDataHoje();
+      configurarSeletorColunas();
+      popularSelectTopPdf();
+      aplicarFiltros();
+    });
+
+    function carregarOrdens() {
+      try {
+        const salvo = localStorage.getItem(STORAGE_KEY);
+        if (salvo) {
+          ordens = JSON.parse(salvo);
+        } else {
+          ordens = JSON.parse(JSON.stringify(DADOS_BASE_ORIGINAIS));
+          salvarOrdens();
+        }
+      } catch (e) {
+        console.error("Falha ao carregar localStorage:", e);
+        ordens = JSON.parse(JSON.stringify(DADOS_BASE_ORIGINAIS));
+      }
+    }
+
+    function salvarOrdens() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(ordens));
+      } catch (e) {
+        alert("Atenção: O armazenamento local (localStorage) excedeu a cota máxima ao tentar gravar imagens ou PDFs grandes. Os dados em tela continuam operacionais, mas recomendamos remover arquivos pesados.");
+      }
+    }
+
+    function restaurarDadosOriginais() {
+      if (confirm("Deseja realmente restaurar os 60 dados originais de produção? Quaisquer alterações locais serão revertidas.")) {
+        localStorage.removeItem(STORAGE_KEY);
+        ordens = JSON.parse(JSON.stringify(DADOS_BASE_ORIGINAIS));
+        salvarOrdens();
+        popularSelectTopPdf();
+        aplicarFiltros();
+        alert("Dados originais restaurados com sucesso!");
+      }
+    }
+
+    function configurarDataHoje() {
+      const el = document.getElementById("txtDataHoje");
+      if (el) {
+        const d = new Date();
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const ano = d.getFullYear();
+        el.innerText = `Hoje: ${dia}/${mes}/${ano} | Gestão Integrada de Fábrica & Cronograma`;
+      }
+    }
+
+    /* FORMATADORES */
+    function formatarMoeda(val) {
+      if (val === null || val === undefined || isNaN(val)) return "—";
+      return Number(val).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function formatarDataBR(dataIso) {
+      if (!dataIso) return "—";
+      const parts = dataIso.split("-");
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return dataIso;
+    }
+
+    function calcularDias(ini, fim) {
+      if (!ini || !fim) return "—";
+      const d1 = new Date(ini);
+      const d2 = new Date(fim);
+      const diffTime = d2.getTime() - d1.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+      return isNaN(diffDays) ? "—" : diffDays;
+    }
+
+    function escaparHtml(texto) {
+      if (!texto) return "";
+      return String(texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /* ANEXO DE PDF NO TOPO */
+    function popularSelectTopPdf() {
+      const sel = document.getElementById("selOrdemTopPdf");
+      if (!sel) return;
+      const valAtual = sel.value;
+      sel.innerHTML = '<option value="">Selecione uma Ordem de Produção...</option>';
+      ordens.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o.id;
+        const opTexto = (o.op && o.op !== "—") ? o.op : `ID-${o.id}`;
+        opt.textContent = `${opTexto} — ${o.desc}${o.pdf ? ' [com PDF]' : ''}`;
+        sel.appendChild(opt);
+      });
+      sel.value = valAtual;
+    }
+
+    function anexarPdfTopo() {
+      const sel = document.getElementById("selOrdemTopPdf");
+      const fileInput = document.getElementById("fileTopPdf");
+      const msg = document.getElementById("topPdfMsg");
+
+      const id = parseInt(sel.value, 10);
+      if (!id) {
+        alert("Por favor, selecione qual Ordem receberá o PDF.");
+        return;
+      }
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Selecione um arquivo .pdf para anexar.");
+        return;
+      }
+      const file = fileInput.files[0];
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        alert("Erro: Apenas arquivos com extensão .pdf são aceitos!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const reg = ordens.find(x => x.id === id);
+        if (reg) {
+          reg.pdf = dataUrl;
+          salvarOrdens();
+          popularSelectTopPdf();
+          aplicarFiltros();
+          msg.textContent = "PDF anexado com sucesso!";
+          setTimeout(() => { msg.textContent = ""; }, 4000);
+          fileInput.value = "";
+        }
+      };
+      reader.onerror = function() {
+        alert("Falha ao ler o arquivo PDF.");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function abrirPdfDataUrl(dataUrl) {
+      if (!dataUrl) return;
+      const win = window.open();
+      if (win) {
+        win.document.write(`<title>Ordem de Produção PDF</title><iframe src="${dataUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+      } else {
+        alert("O bloqueador de pop-ups impediu abrir o PDF. Permita pop-ups para este site.");
+      }
+    }
+
+    /* FILTROS E BUSCA */
+    function obterOrdensFiltradas() {
+      const q = (document.getElementById("filtroBusca")?.value || "").toLowerCase().trim();
+      const st = document.getElementById("filtroStatus")?.value || "TODOS";
+      const setor = document.getElementById("filtroSetor")?.value || "TODOS";
+      const periodo = document.getElementById("filtroPeriodo")?.value || "TODOS";
+
+      return ordens.filter(item => {
+        // Busca texto
+        if (q) {
+          const mOp = (item.op || "").toLowerCase().includes(q);
+          const mDesc = (item.desc || "").toLowerCase().includes(q);
+          if (!mOp && !mDesc) return false;
+        }
+        // Status
+        if (st !== "TODOS" && item.status !== st) return false;
+        // Setor
+        if (setor !== "TODOS" && item.setor !== setor) return false;
+        // Período entrega
+        if (periodo !== "TODOS") {
+          if (periodo === "SEM_DATA") {
+            if (item.fim !== null && item.fim !== "") return false;
+          } else {
+            if (!item.fim || !item.fim.startsWith(periodo)) return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    function aplicarFiltros() {
+      const filtradas = obterOrdensFiltradas();
+
+      // Ordenar por data de entrega (com data primeiro ascendente, sem data no final)
+      filtradas.sort((a, b) => {
+        if (!a.fim && !b.fim) return a.id - b.id;
+        if (!a.fim) return 1;
+        if (!b.fim) return -1;
+        return a.fim.localeCompare(b.fim);
+      });
+
+      renderizarTabela(filtradas);
+      atualizarKpis(filtradas);
+      renderizarGraficos(filtradas);
+    }
+
+    function limparFiltros() {
+      if (document.getElementById("filtroBusca")) document.getElementById("filtroBusca").value = "";
+      if (document.getElementById("filtroStatus")) document.getElementById("filtroStatus").value = "TODOS";
+      if (document.getElementById("filtroSetor")) document.getElementById("filtroSetor").value = "TODOS";
+      if (document.getElementById("filtroPeriodo")) document.getElementById("filtroPeriodo").value = "TODOS";
+      aplicarFiltros();
+    }
+
+    /* KPIS */
+    function atualizarKpis(lista) {
+      const totalItens = lista.length;
+      let somaValor = 0;
+      let itensComValor = 0;
+      let ativos = 0;
+      let finalizados = 0;
+      let protReprovados = 0;
+      let protReprovadosVal = 0;
+      let somaDias = 0;
+      let qtdComTempo = 0;
+
+      lista.forEach(item => {
+        if (item.valor !== null && !isNaN(item.valor)) {
+          somaValor += Number(item.valor);
+          itensComValor++;
+        }
+        if (item.status === "FINALIZADO") {
+          finalizados++;
+        } else if (item.status === "PROTOTIPO REPROVADO") {
+          protReprovados++;
+          if (item.valor) protReprovadosVal += Number(item.valor);
+        } else {
+          ativos++;
+        }
+
+        if (item.inicio && item.fim) {
+          const d1 = new Date(item.inicio);
+          const d2 = new Date(item.fim);
+          const diff = Math.round((d2 - d1) / (1000 * 3600 * 24));
+          if (!isNaN(diff) && diff >= 0) {
+            somaDias += diff;
+            qtdComTempo++;
+          }
+        }
+      });
+
+      const mediaDias = qtdComTempo > 0 ? Math.round(somaDias / qtdComTempo) : 0;
+      const pctFin = totalItens > 0 ? ((finalizados / totalItens) * 100).toFixed(1).replace('.', ',') : "0";
+
+      document.getElementById("kpiTotalItens").innerText = totalItens;
+      document.getElementById("kpiValorTotal").innerText = somaValor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+      document.getElementById("kpiValorSub").innerText = `${itensComValor} itens com valor`;
+      document.getElementById("kpiItensAtivos").innerText = ativos;
+      document.getElementById("kpiFinalizados").innerText = finalizados;
+      document.getElementById("kpiFinalizadosPct").innerText = `${pctFin}% do cronograma`;
+      document.getElementById("kpiProtReprovados").innerText = protReprovados;
+      document.getElementById("kpiProtReprovadosVal").innerText = protReprovadosVal.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }) + " (reavaliação)";
+      document.getElementById("kpiTempoMedio").innerText = `${mediaDias} dias`;
+
+      document.getElementById("contadorItens").innerText = `Exibindo ${totalItens} de ${ordens.length} ordens`;
+    }
+
+    /* RENDERIZAÇÃO DA TABELA */
+    function renderizarTabela(lista) {
+      const tbody = document.getElementById("tbodyProducao");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 2rem; color: #64748b;">Nenhuma ordem encontrada para os filtros selecionados.</td></tr>`;
+        aplicarVisibilidadeColunas();
+        return;
+      }
+
+      const setores = ["MARCENARIA", "METALURGICA", "PINTURA", "PROTOTIPO"];
+      const statuses = ["FINALIZADO", "PRODUZINDO", "PARADO", "D. PROJETOS", "AG. ARTE", "AG. APROVAÇÃO", "AGUARDANDO RETIRA", "PROTOTIPO REPROVADO"];
+
+      lista.forEach(item => {
+        const tr = document.createElement("tr");
+
+        // Tempo dias
+        const tempoDias = calcularDias(item.inicio, item.fim);
+
+        // Progresso
+        const qtdTot = Number(item.qtd) || 1;
+        const prod = Number(item.produzido) || 0;
+        let pct = Math.min(100, Math.max(0, Math.round((prod / qtdTot) * 100)));
+        if (item.status === "FINALIZADO") pct = 100;
+
+        // Badge PDF
+        let badgePdfHtml = "";
+        if (item.pdf) {
+          badgePdfHtml = `<span class="badge-pdf" title="Abrir PDF anexado" onclick="abrirPdfDataUrl(ordens.find(x=>x.id===${item.id}).pdf)">📄 PDF</span>`;
+        }
+
+        // Coluna Imagem
+        let imgHtml = "";
+        if (item.img) {
+          imgHtml = `
+            <div class="thumb-wrapper">
+              <img src="${item.img}" class="thumb-btn" alt="Foto da OP" onclick="abrirLightbox('${item.img}')" title="Clique para ampliar">
+              <button class="thumb-del" onclick="removerImagemInline(${item.id})" title="Remover imagem">&times;</button>
+            </div>
+          `;
+        } else {
+          imgHtml = `<button type="button" class="btn btn-sm btn-secondary" style="font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="dispararUploadImagemInline(${item.id})">📷 Inserir</button>`;
+        }
+
+        // Setor select inline
+        let setorSelectHtml = `<select class="inline-select" onchange="alterarSetorInline(${item.id}, this.value)">`;
+        setores.forEach(s => {
+          setorSelectHtml += `<option value="${s}" ${item.setor === s ? 'selected' : ''}>${s}</option>`;
+        });
+        setorSelectHtml += `</select>`;
+
+        // Status select inline
+        let statusSelectHtml = `<select class="inline-select" onchange="alterarStatusInline(${item.id}, this.value)">`;
+        statuses.forEach(st => {
+          statusSelectHtml += `<option value="${st}" ${item.status === st ? 'selected' : ''}>${st}</option>`;
+        });
+        statusSelectHtml += `</select>`;
+
+        const stBadgeClass = STATUS_CLASSES[item.status] || "st-PRODUZINDO";
+
+        tr.innerHTML = `
+          <td class="col-op" style="font-weight: 600; white-space: nowrap;">
+            ${escaparHtml(item.op)}
+            ${badgePdfHtml}
+          </td>
+          <td class="col-desc" style="max-width: 280px; word-break: break-word;" title="${escaparHtml(item.desc)}">
+            ${escaparHtml(item.desc)}
+          </td>
+          <td class="col-img">${imgHtml}</td>
+          <td class="col-qtd th-num" style="font-weight: 600;">${item.qtd}</td>
+          <td class="col-setor">${setorSelectHtml}</td>
+          <td class="col-ini" style="white-space: nowrap; font-size:0.78rem;">${formatarDataBR(item.inicio)}</td>
+          <td class="col-fim" style="white-space: nowrap; font-size:0.78rem;">${formatarDataBR(item.fim)}</td>
+          <td class="col-tempo th-num">${tempoDias !== "—" ? tempoDias + " d" : "—"}</td>
+          <td class="col-valor th-num" style="white-space: nowrap; font-weight: 500;">${formatarMoeda(item.valor)}</td>
+          <td class="col-prog">
+            <div class="prog-wrapper">
+              <div class="prog-bar-bg" title="${pct}% concluído">
+                <div class="prog-bar-fill" style="width: ${pct}%;"></div>
+              </div>
+              <input type="number" class="prog-input" min="0" max="${item.qtd}" value="${item.status === 'FINALIZADO' ? item.qtd : prod}" onchange="alterarProduzidoInline(${item.id}, this.value)" title="Qtd produzida">
+              <span style="font-size:0.72rem; color:#64748b;">${pct}%</span>
+            </div>
+          </td>
+          <td class="col-status">
+            <div style="display:flex; flex-direction:column; gap:0.25rem;">
+              <span class="badge-status ${stBadgeClass}">${escaparHtml(item.status)}</span>
+              ${statusSelectHtml}
+            </div>
+          </td>
+          <td class="col-acoes" style="white-space: nowrap;">
+            <button class="btn btn-sm btn-secondary" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="abrirModalEdicao(${item.id})">Editar</button>
+            <button class="btn btn-sm" style="padding:0.2rem 0.5rem; font-size:0.75rem; background:#fee2e2; color:#991b1b; border:1px solid #fecaca; margin-left:0.25rem;" onclick="excluirOrdem(${item.id})">Excluir</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      aplicarVisibilidadeColunas();
+    }
+
+    /* ALTERAÇÕES INLINE */
+    function alterarStatusInline(id, novoStatus) {
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+      const statusAntigo = reg.status;
+      reg.status = novoStatus;
+
+      if (novoStatus === "FINALIZADO") {
+        reg.produzido = reg.qtd;
+      } else if (statusAntigo === "FINALIZADO") {
+        reg.produzido = 0;
+      }
+      salvarOrdens();
+      aplicarFiltros();
+    }
+
+    function alterarSetorInline(id, novoSetor) {
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+      reg.setor = novoSetor;
+      salvarOrdens();
+      aplicarFiltros();
+    }
+
+    function alterarProduzidoInline(id, val) {
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+      let n = parseInt(val, 10);
+      if (isNaN(n) || n < 0) n = 0;
+      if (n > reg.qtd) n = reg.qtd;
+
+      reg.produzido = n;
+      if (n === reg.qtd && reg.status !== "FINALIZADO") {
+        reg.status = "FINALIZADO";
+      } else if (n < reg.qtd && reg.status === "FINALIZADO") {
+        reg.status = "PRODUZINDO";
+      }
+      salvarOrdens();
+      aplicarFiltros();
+    }
+
+    function excluirOrdem(id) {
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+      const descr = reg.desc || "(Sem descrição)";
+      const opNum = reg.op || `ID-${reg.id}`;
+      if (confirm(`Tem certeza que deseja excluir o produto "${descr}" (Ordem: ${opNum})?`)) {
+        ordens = ordens.filter(x => x.id !== id);
+        salvarOrdens();
+        popularSelectTopPdf();
+        aplicarFiltros();
+      }
+    }
+
+    /* UPLOAD E COMPRESSÃO DE IMAGENS */
+    function dispararUploadImagemInline(rowId) {
+      uploadTargetRowId = rowId;
+      const input = document.getElementById("inlineImgInput");
+      if (input) {
+        input.value = "";
+        input.click();
+      }
+    }
+
+    function processarUploadImagemInline(e) {
+      if (!uploadTargetRowId) return;
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const maxW = 300;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxW) {
+            h = Math.round((h * maxW) / w);
+            w = maxW;
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataJpeg = canvas.toDataURL("image/jpeg", 0.7);
+
+          const reg = ordens.find(x => x.id === uploadTargetRowId);
+          if (reg) {
+            reg.img = dataJpeg;
+            salvarOrdens();
+            aplicarFiltros();
+          }
+          uploadTargetRowId = null;
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removerImagemInline(id) {
+      const reg = ordens.find(x => x.id === id);
+      if (reg) {
+        reg.img = null;
+        salvarOrdens();
+        aplicarFiltros();
+      }
+    }
+
+    function abrirLightbox(src) {
+      const modal = document.getElementById("lightboxModal");
+      const img = document.getElementById("lightboxImg");
+      if (modal && img) {
+        img.src = src;
+        modal.classList.add("open");
+      }
+    }
+
+    function fecharLightbox(e) {
+      const modal = document.getElementById("lightboxModal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    /* VISIBILIDADE DAS COLUNAS */
+    const TODAS_COLUNAS = [
+      "col-op", "col-desc", "col-img", "col-qtd", "col-setor",
+      "col-ini", "col-fim", "col-tempo", "col-valor", "col-prog", "col-status", "col-acoes"
+    ];
+
+    function configurarSeletorColunas() {
+      let salvas = null;
+      try {
+        salvas = JSON.parse(localStorage.getItem(COLS_KEY));
+      } catch (e) {}
+
+      TODAS_COLUNAS.forEach(colClass => {
+        const chk = document.querySelector(`.column-selector input[data-col="${colClass}"]`);
+        if (chk) {
+          chk.checked = salvas ? (salvas[colClass] !== false) : true;
+        }
+      });
+      aplicarVisibilidadeColunas();
+    }
+
+    function toggleColuna(chk) {
+      salvarPreferenciasColunas();
+      aplicarVisibilidadeColunas();
+    }
+
+    function salvarPreferenciasColunas() {
+      const mapa = {};
+      TODAS_COLUNAS.forEach(c => {
+        const chk = document.querySelector(`.column-selector input[data-col="${c}"]`);
+        mapa[c] = chk ? chk.checked : true;
+      });
+      try {
+        localStorage.setItem(COLS_KEY, JSON.stringify(mapa));
+      } catch (e) {}
+    }
+
+    function mostrarTodasColunas() {
+      TODAS_COLUNAS.forEach(colClass => {
+        const chk = document.querySelector(`.column-selector input[data-col="${colClass}"]`);
+        if (chk) chk.checked = true;
+      });
+      salvarPreferenciasColunas();
+      aplicarVisibilidadeColunas();
+    }
+
+    function aplicarVisibilidadeColunas() {
+      TODAS_COLUNAS.forEach(colClass => {
+        const chk = document.querySelector(`.column-selector input[data-col="${colClass}"]`);
+        const visivel = chk ? chk.checked : true;
+        const els = document.querySelectorAll(`.${colClass}`);
+        els.forEach(el => {
+          el.style.display = visivel ? "" : "none";
+        });
+      });
+    }
+
+    /* FORMULÁRIO NOVA ORDEM */
+    function toggleFormNovo() {
+      const header = document.getElementById("headerFormNovo");
+      const content = document.getElementById("contentFormNovo");
+      const icone = document.getElementById("iconeFormNovo");
+      if (!content) return;
+      const isOpen = content.classList.contains("open");
+      if (isOpen) {
+        content.classList.remove("open");
+        header.classList.remove("open");
+        icone.innerText = "▼";
+      } else {
+        content.classList.add("open");
+        header.classList.add("open");
+        icone.innerText = "▲";
+      }
+    }
+
+    function gerarProximoOp() {
+      let maxNum = 0;
+      ordens.forEach(o => {
+        if (o.op && o.op.startsWith("OP-")) {
+          const num = parseInt(o.op.replace("OP-", ""), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+      return `OP-${String(maxNum + 1).padStart(4, "0")}`;
+    }
+
+    function salvarNovaOrdem(e) {
+      e.preventDefault();
+      let op = document.getElementById("novoOp").value.trim();
+      const desc = document.getElementById("novoDesc").value.trim();
+      const qtd = parseInt(document.getElementById("novoQtd").value, 10);
+      const setor = document.getElementById("novoSetor").value;
+      const inicio = document.getElementById("novoInicio").value || null;
+      const fim = document.getElementById("novoFim").value || null;
+      const status = document.getElementById("novoStatus").value;
+      const valStr = document.getElementById("novoValor").value;
+      const valor = valStr !== "" ? parseFloat(valStr) : null;
+
+      if (!desc) {
+        alert("A descrição do produto é obrigatória.");
+        return;
+      }
+      if (isNaN(qtd) || qtd <= 0) {
+        alert("A quantidade deve ser maior que zero.");
+        return;
+      }
+      if (inicio && fim && fim < inicio) {
+        alert("A data de entrega não pode ser anterior à data de início.");
+        return;
+      }
+
+      if (!op) {
+        op = gerarProximoOp();
+      } else {
+        // Validar duplicidade
+        const existe = ordens.some(o => o.op && o.op !== "—" && o.op.toLowerCase() === op.toLowerCase());
+        if (existe) {
+          alert(`Já existe uma Ordem cadastrada com o número "${op}". Escolha outro número.`);
+          return;
+        }
+      }
+
+      const novoId = ordens.reduce((max, x) => Math.max(max, x.id), 0) + 1;
+      const novaOrdem = {
+        id: novoId,
+        op: op,
+        desc: desc,
+        qtd: qtd,
+        setor: setor,
+        inicio: inicio,
+        fim: fim,
+        status: status,
+        valor: valor,
+        produzido: status === "FINALIZADO" ? qtd : 0,
+        pdf: null,
+        img: null
+      };
+
+      ordens.unshift(novaOrdem);
+      salvarOrdens();
+      popularSelectTopPdf();
+      aplicarFiltros();
+
+      document.getElementById("formNovaOrdem").reset();
+      toggleFormNovo();
+      alert(`Ordem ${op} cadastrada com sucesso!`);
+    }
+
+    /* MODAL EDIÇÃO */
+    let edicaoPdfTemp = null;
+
+    function abrirModalEdicao(id) {
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+
+      document.getElementById("editId").value = reg.id;
+      document.getElementById("editOp").value = reg.op === "—" ? "" : reg.op;
+      document.getElementById("editDesc").value = reg.desc;
+      document.getElementById("editQtd").value = reg.qtd;
+      document.getElementById("editProduzido").value = reg.produzido !== undefined ? reg.produzido : (reg.status === "FINALIZADO" ? reg.qtd : 0);
+      document.getElementById("editSetor").value = reg.setor;
+      document.getElementById("editInicio").value = reg.inicio || "";
+      document.getElementById("editFim").value = reg.fim || "";
+      document.getElementById("editStatus").value = reg.status;
+      document.getElementById("editValor").value = reg.valor !== null ? reg.valor : "";
+
+      edicaoPdfTemp = reg.pdf;
+      atualizarUiPdfModal();
+
+      document.getElementById("modalEdicao").classList.add("open");
+    }
+
+    function fecharModalEdicao() {
+      document.getElementById("modalEdicao").classList.remove("open");
+      edicaoPdfTemp = null;
+    }
+
+    function atualizarUiPdfModal() {
+      const btnRemover = document.getElementById("btnRemoverPdfModal");
+      const linkVer = document.getElementById("linkVerPdfModal");
+      if (edicaoPdfTemp) {
+        btnRemover.style.display = "inline-flex";
+        linkVer.style.display = "inline-flex";
+        linkVer.onclick = (e) => { e.preventDefault(); abrirPdfDataUrl(edicaoPdfTemp); };
+      } else {
+        btnRemover.style.display = "none";
+        linkVer.style.display = "none";
+      }
+    }
+
+    function anexarPdfModal() {
+      const fileInput = document.getElementById("editPdfFile");
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Selecione um arquivo .pdf antes de clicar no botão.");
+        return;
+      }
+      const file = fileInput.files[0];
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        alert("Apenas arquivos .pdf são válidos!");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        edicaoPdfTemp = e.target.result;
+        atualizarUiPdfModal();
+        alert("PDF carregado no modal. Clique em 'Salvar Alterações' para confirmar.");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removerPdfModal() {
+      edicaoPdfTemp = null;
+      document.getElementById("editPdfFile").value = "";
+      atualizarUiPdfModal();
+    }
+
+    function salvarEdicaoOrdem(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById("editId").value, 10);
+      const reg = ordens.find(x => x.id === id);
+      if (!reg) return;
+
+      let op = document.getElementById("editOp").value.trim();
+      const desc = document.getElementById("editDesc").value.trim();
+      const qtd = parseInt(document.getElementById("editQtd").value, 10);
+      let prod = parseInt(document.getElementById("editProduzido").value, 10);
+      const setor = document.getElementById("editSetor").value;
+      const inicio = document.getElementById("editInicio").value || null;
+      const fim = document.getElementById("editFim").value || null;
+      const status = document.getElementById("editStatus").value;
+      const valStr = document.getElementById("editValor").value;
+      const valor = valStr !== "" ? parseFloat(valStr) : null;
+
+      if (!desc) {
+        alert("A descrição é obrigatória.");
+        return;
+      }
+      if (isNaN(qtd) || qtd <= 0) {
+        alert("A quantidade deve ser maior que zero.");
+        return;
+      }
+      if (isNaN(prod) || prod < 0) prod = 0;
+      if (prod > qtd) prod = qtd;
+
+      if (inicio && fim && fim < inicio) {
+        alert("A data de entrega não pode ser anterior à data de início.");
+        return;
+      }
+
+      if (!op) op = "—";
+
+      // Validar duplicidade com outro registro
+      if (op !== "—") {
+        const duplicado = ordens.some(o => o.id !== id && o.op && o.op !== "—" && o.op.toLowerCase() === op.toLowerCase());
+        if (duplicado) {
+          alert(`O número de ordem "${op}" já está em uso por outro registro.`);
+          return;
+        }
+      }
+
+      reg.op = op;
+      reg.desc = desc;
+      reg.qtd = qtd;
+      reg.setor = setor;
+      reg.inicio = inicio;
+      reg.fim = fim;
+      reg.status = status;
+      reg.valor = valor;
+      reg.pdf = edicaoPdfTemp;
+
+      if (status === "FINALIZADO") {
+        reg.produzido = qtd;
+      } else {
+        reg.produzido = prod;
+      }
+
+      salvarOrdens();
+      fecharModalEdicao();
+      popularSelectTopPdf();
+      aplicarFiltros();
+    }
+
+    /* GRÁFICOS SVG PURO */
+    function renderizarGraficos(lista) {
+      renderizarGraficoStatus(lista);
+      renderizarGraficoSetor(lista);
+      renderizarGraficoMes(lista);
+      renderizarGraficoValor(lista);
+    }
+
+    // A) Barras horizontais: Itens por Status
+    function renderizarGraficoStatus(lista) {
+      const container = document.getElementById("chartBoxStatus");
+      if (!container) return;
+
+      const contagem = {
+        "FINALIZADO": 0,
+        "PRODUZINDO": 0,
+        "PARADO": 0,
+        "D. PROJETOS": 0,
+        "AG. ARTE": 0,
+        "AG. APROVAÇÃO": 0,
+        "AGUARDANDO RETIRA": 0,
+        "PROTOTIPO REPROVADO": 0
+      };
+      lista.forEach(o => { if (contagem[o.status] !== undefined) contagem[o.status]++; });
+
+      const entries = Object.entries(contagem);
+      const maxVal = Math.max(...entries.map(e => e[1]), 1);
+
+      let html = `<div style="display:flex; flex-direction:column; gap:6px; height:100%; justify-content:center;">`;
+      entries.forEach(([st, qtd]) => {
+        const pct = ((qtd / maxVal) * 100).toFixed(1);
+        const cor = STATUS_CORES[st] || "#1565c0";
+        html += `
+          <div style="display:flex; align-items:center; gap:8px; font-size:11px;" title="${st}: ${qtd} itens">
+            <span style="width:110px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#334155; font-weight:600;">${st}</span>
+            <div style="flex:1; background:#f1f5f9; height:16px; border-radius:4px; overflow:hidden; position:relative;">
+              <div style="width:${pct}%; background:${cor}; height:100%; border-radius:4px; transition:width 0.3s;"></div>
+            </div>
+            <span style="width:32px; font-weight:700; color:#1e293b;">${qtd}</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+      document.getElementById("cntChartStatus").innerText = `${lista.length} itens`;
+    }
+
+    // B) Barras verticais: Itens por Setor
+    function renderizarGraficoSetor(lista) {
+      const container = document.getElementById("chartBoxSetor");
+      if (!container) return;
+
+      const setores = { "MARCENARIA": 0, "METALURGICA": 0, "PINTURA": 0, "PROTOTIPO": 0 };
+      lista.forEach(o => { if (setores[o.setor] !== undefined) setores[o.setor]++; });
+
+      const entries = Object.entries(setores);
+      const maxVal = Math.max(...entries.map(e => e[1]), 1);
+      const coresSetor = {
+        "MARCENARIA": "#0b3d66",
+        "METALURGICA": "#1565c0",
+        "PINTURA": "#42a5f5",
+        "PROTOTIPO": "#f57f17"
+      };
+
+      let html = `<div style="display:flex; align-items:flex-end; justify-content:space-around; height:180px; padding-top:20px; border-bottom:1px solid #e2e8f0;">`;
+      entries.forEach(([setor, qtd]) => {
+        const pctHeight = Math.max(5, (qtd / maxVal) * 150);
+        const cor = coresSetor[setor] || "#0b3d66";
+        html += `
+          <div style="display:flex; flex-direction:column; align-items:center; width:22%;" title="${setor}: ${qtd} itens">
+            <span style="font-size:11px; font-weight:700; color:#1e293b; margin-bottom:4px;">${qtd}</span>
+            <div style="width:70%; height:${pctHeight}px; background:${cor}; border-radius:4px 4px 0 0; transition:height 0.3s;"></div>
+            <span style="font-size:10px; font-weight:600; color:#475569; margin-top:6px; text-align:center;">${setor}</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+      document.getElementById("cntChartSetor").innerText = `${lista.length} itens`;
+    }
+
+    // C) Colunas: Entregas por Mês
+    function renderizarGraficoMes(lista) {
+      const container = document.getElementById("chartBoxMes");
+      if (!container) return;
+
+      const meses = { "out/2025": 0, "nov/2025": 0, "dez/2025": 0, "Sem data": 0 };
+      lista.forEach(o => {
+        if (!o.fim) {
+          meses["Sem data"]++;
+        } else if (o.fim.startsWith("2025-10")) {
+          meses["out/2025"]++;
+        } else if (o.fim.startsWith("2025-11")) {
+          meses["nov/2025"]++;
+        } else if (o.fim.startsWith("2025-12")) {
+          meses["dez/2025"]++;
+        } else {
+          meses["Sem data"]++;
+        }
+      });
+
+      const entries = Object.entries(meses);
+      const maxVal = Math.max(...entries.map(e => e[1]), 1);
+
+      let html = `<div style="display:flex; align-items:flex-end; justify-content:space-around; height:180px; padding-top:20px; border-bottom:1px solid #e2e8f0;">`;
+      entries.forEach(([label, qtd]) => {
+        const pctHeight = Math.max(5, (qtd / maxVal) * 150);
+        const cor = label === "Sem data" ? "#94a3b8" : "#1565c0";
+        html += `
+          <div style="display:flex; flex-direction:column; align-items:center; width:22%;" title="${label}: ${qtd} ordens">
+            <span style="font-size:11px; font-weight:700; color:#1e293b; margin-bottom:4px;">${qtd}</span>
+            <div style="width:70%; height:${pctHeight}px; background:${cor}; border-radius:4px 4px 0 0; transition:height 0.3s;"></div>
+            <span style="font-size:10px; font-weight:600; color:#475569; margin-top:6px; text-align:center;">${label}</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // D) Rosca SVG: Valor por Status
+    function renderizarGraficoValor(lista) {
+      const container = document.getElementById("chartBoxValor");
+      if (!container) return;
+
+      const somaStatus = {};
+      let totalGeral = 0;
+      lista.forEach(o => {
+        if (o.valor !== null && !isNaN(o.valor)) {
+          const v = Number(o.valor);
+          somaStatus[o.status] = (somaStatus[o.status] || 0) + v;
+          totalGeral += v;
+        }
+      });
+
+      const entries = Object.entries(somaStatus).filter(e => e[1] > 0);
+      document.getElementById("cntChartValor").innerText = totalGeral.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+      if (totalGeral === 0 || entries.length === 0) {
+        container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#94a3b8; font-size:12px;">Sem valores no filtro.</div>`;
+        return;
+      }
+
+      // Desenhar Rosca SVG
+      const size = 150;
+      const cx = 75, cy = 75, r = 55;
+      const circ = 2 * Math.PI * r;
+      let acumulado = 0;
+      let svgCircles = "";
+
+      entries.forEach(([st, val]) => {
+        const pct = val / totalGeral;
+        const dashArray = `${pct * circ} ${circ}`;
+        const offset = -acumulado * circ;
+        const cor = STATUS_CORES[st] || "#0b3d66";
+        svgCircles += `
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="transparent" stroke="${cor}" stroke-width="26"
+            stroke-dasharray="${dashArray}" stroke-dashoffset="${offset}"
+            transform="rotate(-90 ${cx} ${cy})">
+            <title>${st}: R$ ${val.toLocaleString('pt-BR')} (${(pct*100).toFixed(1)}%)</title>
+          </circle>
+        `;
+        acumulado += pct;
+      });
+
+      let legendHtml = `<div style="display:flex; flex-direction:column; gap:4px; font-size:10.5px; max-height:160px; overflow-y:auto; flex:1;">`;
+      entries.forEach(([st, val]) => {
+        const pct = ((val / totalGeral) * 100).toFixed(1);
+        const cor = STATUS_CORES[st] || "#0b3d66";
+        legendHtml += `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="width:9px; height:9px; background:${cor}; border-radius:2px; flex-shrink:0;"></span>
+            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#334155;">${st}</span>
+            <span style="font-weight:700; color:#1e293b;">${pct}%</span>
+          </div>
+        `;
+      });
+      legendHtml += `</div>`;
+
+      container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-around; height:100%; gap:8px;">
+          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            ${svgCircles}
+            <circle cx="${cx}" cy="${cy}" r="40" fill="#ffffff" />
+            <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#0b3d66">100%</text>
+          </svg>
+          ${legendHtml}
+        </div>
+      `;
+    }
+
+    /* J) IMPRESSÃO DA PROGRAMAÇÃO PARA REUNIÕES SEMANAIS */
+    function executarImpressaoProgramacao() {
+      const filtradas = obterOrdensFiltradas();
+
+      // Ordenar por data de entrega
+      filtradas.sort((a, b) => {
+        if (!a.fim && !b.fim) return a.id - b.id;
+        if (!a.fim) return 1;
+        if (!b.fim) return -1;
+        return a.fim.localeCompare(b.fim);
+      });
+
+      const filtroStatusTxt = document.getElementById("filtroStatus")?.value || "TODOS";
+      const filtroSetorTxt = document.getElementById("filtroSetor")?.value || "TODOS";
+      const filtroPeriodoTxt = document.getElementById("filtroPeriodo")?.value || "TODOS";
+      const filtroBuscaTxt = document.getElementById("filtroBusca")?.value || "";
+
+      let valorTotalFiltrado = 0;
+      filtradas.forEach(x => {
+        if (x.valor) valorTotalFiltrado += Number(x.valor);
+      });
+
+      const d = new Date();
+      const dataEmissao = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+      let linhasHtml = "";
+      filtradas.forEach((item, idx) => {
+        const tempo = calcularDias(item.inicio, item.fim);
+        const qtd = Number(item.qtd) || 1;
+        const prod = Number(item.produzido) || 0;
+        let progPct = item.status === "FINALIZADO" ? 100 : Math.min(100, Math.round((prod / qtd) * 100));
+
+        linhasHtml += `
+          <tr>
+            <td style="font-weight:600;">${escaparHtml(item.op)}</td>
+            <td>${escaparHtml(item.desc)}</td>
+            <td style="text-align:right;">${item.qtd}</td>
+            <td>${item.setor}</td>
+            <td>${formatarDataBR(item.inicio)}</td>
+            <td>${formatarDataBR(item.fim)}</td>
+            <td style="text-align:right;">${tempo !== "—" ? tempo + " d" : "—"}</td>
+            <td><strong>${item.status}</strong></td>
+            <td style="text-align:right;">${progPct}%</td>
+          </tr>
+        `;
+      });
+
+      const area = document.getElementById("areaImpressao");
+      area.innerHTML = `
+        <div class="print-header">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="margin:0; font-size:16pt; color:#0b3d66;">Programação de Produção — Reunião Semanal</h2>
+              <div style="font-size:9pt; color:#333; margin-top:2px;">Controle Operacional Industrial • PCP 2026</div>
+            </div>
+            <div style="text-align:right; font-size:9pt;">
+              <strong>Data de Emissão:</strong> ${dataEmissao}
+            </div>
+          </div>
+          <div style="font-size:8.5pt; color:#444; margin-top:6px; background:#f4f6f9; padding:4px 8px; border-radius:4px;">
+            <strong>Filtros Aplicados:</strong> Status: ${filtroStatusTxt} | Setor: ${filtroSetorTxt} | Período: ${filtroPeriodoTxt}${filtroBuscaTxt ? ' | Busca: "' + escaparHtml(filtroBuscaTxt) + '"' : ''}
+          </div>
+        </div>
+
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width:11%;">Ordem</th>
+              <th>Descrição do Produto</th>
+              <th style="width:5%; text-align:right;">Qtd</th>
+              <th style="width:11%;">Setor</th>
+              <th style="width:9%;">Início</th>
+              <th style="width:9%;">Entrega</th>
+              <th style="width:7%; text-align:right;">Tempo</th>
+              <th style="width:15%;">Status</th>
+              <th style="width:7%; text-align:right;">Progresso</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhasHtml}
+          </tbody>
+        </table>
+
+        <div class="print-footer">
+          <div>
+            <strong>Total de Ordens Listadas:</strong> ${filtradas.length} itens
+          </div>
+          <div>
+            <strong>Valor Total Filtrado:</strong> ${valorTotalFiltrado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </div>
+          <div>
+            Página gerada via Dashboard de Produção 2026
+          </div>
+        </div>
+      `;
+
+      window.print();
+    }
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>
